@@ -1,6 +1,7 @@
 import { ExplicitParamsOptions, ParamSource } from "./types";
 
 const DEFAULT_EXTRA_PARAMS_ACTION = 400;
+const DEFAULT_INVALID_PARAM_ACTION = 400;
 const DEFAULT_VALIDATOR = () => true;
 
 export function normaliseConfig(
@@ -19,12 +20,14 @@ export function normaliseConfig(
             : null,
         params: isParamOptions
             ? (<ExplicitParamsOptions>config).params.map(param => ({
+                invalidAction: DEFAULT_INVALID_PARAM_ACTION,
                 validator: DEFAULT_VALIDATOR,
                 ...param
             }))
             : (<Array<string>>config).map(key => ({
                 key,
-                validator: DEFAULT_VALIDATOR
+                validator: DEFAULT_VALIDATOR,
+                invalidAction: DEFAULT_INVALID_PARAM_ACTION
             })),
         source: isParamOptions ? (<ExplicitParamsOptions>config).source : ParamSource.PostBody
     };
