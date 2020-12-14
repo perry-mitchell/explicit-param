@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import status from "statuses";
-import { ExplicitParamsOptions, Parameters, ParamSource, ResponseHandler } from "./types";
+import { ExplicitParamsOptions, Parameters, ParamSource, ParamValidator, ResponseHandler } from "./types";
 
 export function explicitParamsValidator(
     this: ExplicitParamsOptions,
@@ -34,6 +34,7 @@ export function explicitParamsValidator(
         throw new Error("Invalid parameter source: Not an object");
     }
     // Check missing / valid
+    const validatedParameters: Array<string> = [];
     parameters.forEach(parameter => {
         const matchingParams = findKeys(parameter.key, data);
         // Check if missing
@@ -43,8 +44,19 @@ export function explicitParamsValidator(
             }
         }
         // Check if all values are valid
-        // @todo
+        const validatorFn = parameter.validator as ParamValidator;
+        Object.keys(matchingParams).forEach(matchingKey => {
+            if (validatorFn(matchingParams[matchingKey], matchingKey) !== true) {
+                throw new Error(`Parameter "${matchingKey}" is invalid (according to the validator)`);
+            }
+            validatedParameters.push(matchingKey);
+        });
     });
+    // Check extra parameters
+    for (const key in data) {
+        if (validatedParameters.indexOf(key) >= 0) continue;
+        return invokeAction(req, res, next, extraParamsAction as number | ResponseHandler);
+    }
     // All passed, continue
     next();
 }
